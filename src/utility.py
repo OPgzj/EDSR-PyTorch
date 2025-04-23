@@ -74,6 +74,7 @@ class checkpoint():
         os.makedirs(self.dir, exist_ok=True)
         os.makedirs(self.get_path('model'), exist_ok=True)
         for d in args.data_test:
+
             os.makedirs(self.get_path('results-{}'.format(d)), exist_ok=True)
 
         open_type = 'a' if os.path.exists(self.get_path('log.txt'))else 'w'
@@ -84,7 +85,7 @@ class checkpoint():
                 f.write('{}: {}\n'.format(arg, getattr(args, arg)))
             f.write('\n')
 
-        self.n_processes = 8
+        self.n_processes = 1
 
     def get_path(self, *subdir):
         return os.path.join(self.dir, *subdir)
@@ -133,19 +134,21 @@ class checkpoint():
     
 
     def begin_background(self):
-        self.queue = Queue()
+        pass
+        # self.queue = Queue()
 
-        self.process = [
-            Process(target=bg_target, args=(self.queue,)) \
-            for _ in range(self.n_processes)
-        ]
+        # self.process = [
+        #     Process(target=bg_target, args=(self.queue,)) \
+        #     for _ in range(self.n_processes)
+        # ]
         
-        for p in self.process: p.start()
+        # for p in self.process: p.start()
 
     def end_background(self):
-        for _ in range(self.n_processes): self.queue.put((None, None))
-        while not self.queue.empty(): time.sleep(1)
-        for p in self.process: p.join()
+        pass
+        # for _ in range(self.n_processes): self.queue.put((None, None))
+        # while not self.queue.empty(): time.sleep(1)
+        # for p in self.process: p.join()
 
     def save_results(self, dataset, filename, save_list, scale):
         if self.args.save_results:
@@ -158,7 +161,11 @@ class checkpoint():
             for v, p in zip(save_list, postfix):
                 normalized = v[0].mul(255 / self.args.rgb_range)
                 tensor_cpu = normalized.byte().permute(1, 2, 0).cpu()
-                self.queue.put(('{}{}.png'.format(filename, p), tensor_cpu))
+                # self.queue.put(('{}{}.png'.format(filename, p), tensor_cpu))
+                # Save the image directly
+                image_filename = '{}{}.png'.format(filename, p)
+                imageio.imwrite(image_filename, tensor_cpu.numpy())
+                print(image_filename)
 
 def quantize(img, rgb_range):
     pixel_range = 255 / rgb_range
